@@ -41,7 +41,13 @@ public class GraphPanel extends JPanel {
                 super.mousePressed(e);
                 for (int i = 0; i < squares.size(); i++) {
                     if (isInsideDeleteButton(squares.get(i), e.getPoint())) {
+                        Square deletedSq = squares.get(i);
                         squares.remove(i);
+                        for (Square sq : squares)  {
+                            if (sq.getArrowsTo().contains(deletedSq)) {
+                                sq.getArrowsTo().remove(deletedSq);
+                            }
+                        }
                         repaint();
                         return;
                     }
@@ -177,6 +183,7 @@ public class GraphPanel extends JPanel {
         private String title;
         private String description;
         private ArrayList<Square> arrowsTo;
+        private ArrayList<Square> arrowsFrom;
         private int width;
         private int height;
 
@@ -185,11 +192,13 @@ public class GraphPanel extends JPanel {
             this.title = title;
             this.description = description;
             this.arrowsTo = new ArrayList<>();
+            this.arrowsFrom = new ArrayList<>();
         }
 
         public void addArrowTo(Square sq) {
             this.arrowsTo.add(sq);
         }
+
 
         public ArrayList<Square> getArrowsTo() {
             return this.arrowsTo;
