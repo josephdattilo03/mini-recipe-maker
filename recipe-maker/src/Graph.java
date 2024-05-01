@@ -10,9 +10,13 @@ public class Graph {
       ------------------------------*/
     private HashMap<Integer, ArrayList<Integer>> graph;
     private LinkedList<Integer> stack;
+
+    //discovered not at moment it was added to stack
+    //discovered moment it was removed
     private ArrayList<Integer> discovered;
     private HashMap<Integer, Boolean> seen;
     //maps an integer to the string ingredient
+    private HashMap<Integer, Boolean> seeing;
     //private HashMap<Integer, String> strMap;
     private HashMap<Integer, Integer> startTime;
     private HashMap<Integer, Integer> finishTime;
@@ -30,63 +34,81 @@ public class Graph {
         this.discovered = new ArrayList<>();
         this.stack = new LinkedList<>();
         this.seen = new HashMap<>();
+        //helps detect cycles
+        this.seeing = new HashMap<>();
         this.startTime = new HashMap<>();
         this.finishTime = new HashMap<>();
 
         //for each key, make the value false at the start as none have been seen
         for (Integer key : this.graph.keySet()) {
             this.seen.put(key, false);
+            this.seeing.put(key, false);
         }
 
-        this.stack.add(source);
         helper(source);
 
         for (Integer done : this.graph.keySet()) {
             if (!this.seen.get(done)) {
-                this.stack.add(done);
                 helper(done);
             }
         }
+
+        if (this.cyclic) {
+            throw new IllegalArgumentException("Information given contains a cycle");
+        }
+
+        txtFile();
     }
 
     //meant to do the iterations to add necessary elements
     //to stack and discovered
     private void helper(Integer top) {
-        //setting source node to say it has been seen if it hasn't already
-        this.seen.put(top, true);
-        this.currTime++;
-        this.startTime.put(top, this.currTime);
+        this.stack.add(top);
 
-        //loop until queue is incomplete and be able to start
-        //if it's the first node
-        while (!(this.stack.isEmpty())) {
-            //pull from top of the stack and add to discovered
-            int newTop = this.stack.pollLast();
-            this.discovered.add(newTop);
+        while(!this.stack.isEmpty()){
+            int newTop = this.stack.peekLast();
 
-            //iterate through neighbors of the source node
-            for (int i = 0; i < this.graph.get(newTop).size(); i++) {
-                //set temp to neighbor i
-                int temp = this.graph.get(newTop).get(i);
-                //if i isn't in seen, set it to seen, and add
-                //to top of the stack
-                if (this.seen.containsKey(temp) && !(this.seen.get(temp))) {
-                    this.seen.put(temp, true);
-                    this.stack.add(temp);
+            if (!this.seen.get(newTop)) {
+                this.seen.put(newTop, true);
+                this.seeing.put(newTop, true);
+                this.currTime++;
+                this.startTime.put(newTop, this.currTime);
+            }
+
+            boolean allNeighTrav = true;
+            for(Integer neigh : this.graph.get(newTop)) {
+                if (this.seeing.get(neigh)) {
+                    this.cyclic = true;
+                    throw new IllegalArgumentException("Information given contains a cycle");
+                }
+                if (!this.seen.get(neigh)) {
+                    this.stack.add(neigh);
+                    allNeighTrav = false;
+                    break;
                 }
             }
+
+            if (allNeighTrav) {
+                this.stack.removeLast();
+                this.seeing.put(newTop, false);
+                this.discovered.add(newTop);
+                this.currTime++;
+                this.finishTime.put(newTop, this.currTime);
+            }
         }
-        this.currTime++;
-        this.finishTime.put(top, this.currTime);
     }
 
     public ArrayList<Integer> getDiscovered() {
         return this.discovered;
     }
 
-    public void txtFile(){
-        ArrayList<Integer> topSort = getTopSort();
+    private void txtFile(){
+        ArrayList<Integer> topSort = topSort();
         File file = new File("orderedRecipe.txt");
+
+        for (Integer integer : topSort) {
+            System.out.println(integer);
+        }
 
         try (PrintWriter pWriter = new PrintWriter(file)){
             for (Integer integer : topSort) {
@@ -97,13 +119,16 @@ public class Graph {
         }
     }
 
-    private ArrayList<Integer> getTopSort() {
+    public ArrayList<Integer> getTopSort() {
+        return topSort();
+    }
+    private ArrayList<Integer> topSort() {
         if (this.cyclic) {
             throw new IllegalArgumentException("Information given contains a cycle");
         }
 
         //create a copy so we can remove entries
-        HashMap<Integer, Integer>  finishTimeCopy = new HashMap<>(finishTime);
+        HashMap<Integer, Integer>  finishTimeCopy = new HashMap<>(this.finishTime);
         ArrayList<Integer> topSort = new ArrayList<>();
 
         //sees which val is the biggest and then adds to topSort and deletes entry
@@ -113,7 +138,7 @@ public class Graph {
             int maxEntryKey = Integer.MIN_VALUE;
             int maxEntryVal = Integer.MIN_VALUE;
 
-            for (HashMap.Entry<Integer, Integer> node : this.finishTime.entrySet()) {
+            for (HashMap.Entry<Integer, Integer> node : finishTimeCopy.entrySet()) {
                 if (node.getValue() > maxEntryVal) {
                     maxEntryKey = node.getKey();
                     maxEntryVal = node.getValue();
@@ -123,7 +148,7 @@ public class Graph {
 
             topSort.add(maxEntryKey);
             //remove entry once we've added it to top sort
-            finishTimeCopy.remove(maxEntryVal);
+            finishTimeCopy.remove(maxEntryKey);
         }
 
         return topSort;
