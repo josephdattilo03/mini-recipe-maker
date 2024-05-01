@@ -1,0 +1,39 @@
+********************************************************
+Names:
+    Joseph Dattilo and Akshay Adaikalavan
+
+********************************************************
+Project Title:
+    Mini Recipe Maker
+
+********************************************************
+Project Description:
+    Our project allows users to interact with an application to figure out a potential order to make a recipe.
+    They can create notes with a title and then drag arrows for steps that must be done before others.
+    After finalizing the mixtures/ingredients, we topologically sort those inputted to figure out an order to do the
+    whole recipe in. We only allow acyclic graphs, and will return a txt file with the order of steps.
+
+********************************************************
+Categories Used:
+    Graph and Graph Algorithms:
+        Specifically, the graph component was the users ability to create different notes with ingredients/mixtures
+        which were the nodes of the graph. They drag arrows from one to the next to dictate the order of what must be
+        done before another. Thus, they create a directed graph (ideally acyclic or error will be thrown).
+
+        With the DAG, we perform depth-first search including start and finish times. We use those finish times to
+        topologically sort the information we get from the user to offer a recipe order that is plausible.
+
+********************************************************
+Work Breakdown:
+    Joseph:
+        Joseph largely focused on the UIUX of the project. He created the graphics including the notes, ability to add
+        and delete them, ability to drag arrows across, ability to add titles and descriptions, and the overall look.
+        He also connected the frontend to the backend to make sure that the user inputted information properly went to
+        the backend and worked with the output of the topological sort.
+
+    Akshay:
+        Akshay worked mainly on the backend part of the application. He worked on the DFS, initially taking his base
+        code from an earlier homework). He did edit the DFS itself slightly to be able to accommodate the new demands of
+        the project. He also added a start and finish time functionality so that they would be able to topologically
+        sort the inputted information. He did the topological sort method. He also made sure to check if there were any
+        cycles and throw an exception if there were. He focused on this summary document as well.
