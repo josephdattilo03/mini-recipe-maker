@@ -6,7 +6,9 @@ Names:
 Project Title:
     Mini Recipe Maker
 
-Instruction Video: https://youtu.be/O7pWX7KwbTE
+********************************************************
+Instruction Video:
+    https://youtu.be/O7pWX7KwbTE
 
 ********************************************************
 Project Description:
@@ -25,13 +27,18 @@ Categories Used:
         With the DAG, we perform depth-first search including start and finish times. We use those finish times to
         topologically sort the information we get from the user to offer a recipe order that is plausible.
 
+    Document Search (aka Information Retrieval):
+        This is the element of the project that scrapes and image from https://www.simplyrecipes.com/search?q= if
+        available. If it's not available, we let the user know that there is no image for the title of the recipe given.
+
 ********************************************************
 Work Breakdown:
     Joseph:
         Joseph largely focused on the UIUX of the project. He created the graphics including the notes, ability to add
         and delete them, ability to drag arrows across, ability to add titles and descriptions, and the overall look.
         He also connected the frontend to the backend to make sure that the user inputted information properly went to
-        the backend and worked with the output of the topological sort.
+        the backend and worked with the output of the topological sort. He also made sure that the image scraped
+        properly (as long as the title provided was valid). Joseph also made the instruction video we linked above.
 
     Akshay:
         Akshay worked mainly on the backend part of the application. He worked on the DFS, initially taking his base
