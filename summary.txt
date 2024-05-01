@@ -6,6 +6,8 @@ Names:
 Project Title:
     Mini Recipe Maker
 
+Instruction Video: https://youtu.be/O7pWX7KwbTE
+
 ********************************************************
 Project Description:
     Our project allows users to interact with an application to figure out a potential order to make a recipe.
