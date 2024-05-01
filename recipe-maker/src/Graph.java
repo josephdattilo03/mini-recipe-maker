@@ -17,6 +17,7 @@ public class Graph {
     private HashMap<Integer, Integer> startTime;
     private HashMap<Integer, Integer> finishTime;
     private Boolean cyclic = false;
+    private int currTime = 0;
 
     /*------------------------------
       METHODS
@@ -29,6 +30,8 @@ public class Graph {
         this.discovered = new ArrayList<>();
         this.stack = new LinkedList<>();
         this.seen = new HashMap<>();
+        this.startTime = new HashMap<>();
+        this.finishTime = new HashMap<>();
 
         //for each key, make the value false at the start as none have been seen
         for (Integer key : this.graph.keySet()) {
@@ -51,6 +54,8 @@ public class Graph {
     private void helper(Integer top) {
         //setting source node to say it has been seen if it hasn't already
         this.seen.put(top, true);
+        this.currTime++;
+        this.startTime.put(top, this.currTime);
 
         //loop until queue is incomplete and be able to start
         //if it's the first node
@@ -71,6 +76,8 @@ public class Graph {
                 }
             }
         }
+        this.currTime++;
+        this.finishTime.put(top, this.currTime);
     }
 
     public ArrayList<Integer> getDiscovered() {
@@ -82,8 +89,8 @@ public class Graph {
         File file = new File("orderedRecipe.txt");
 
         try (PrintWriter pWriter = new PrintWriter(file)){
-            for (int i = 0; i < topSort.size(); i++) {
-                pWriter.println(topSort.get(i));
+            for (Integer integer : topSort) {
+                pWriter.println(integer);
             }
         } catch(Exception e){
             System.out.println(e);
@@ -91,6 +98,10 @@ public class Graph {
     }
 
     private ArrayList<Integer> getTopSort() {
+        if (this.cyclic) {
+            throw new IllegalArgumentException("Information given contains a cycle");
+        }
+
         //create a copy so we can remove entries
         HashMap<Integer, Integer>  finishTimeCopy = new HashMap<>(finishTime);
         ArrayList<Integer> topSort = new ArrayList<>();
