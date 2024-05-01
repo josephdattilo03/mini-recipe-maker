@@ -2,38 +2,53 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+
+import static javax.swing.JOptionPane.showMessageDialog;
 
 public class GraphPanel extends JPanel {
     private ArrayList<Square> squares = new ArrayList<>();
     private int draggingSquare = -1;
     private Point arrowStart;
     private Point arrowEnd;
-
     private Square arrowStartSquare;
     private Square arrowEndSquare;
-    private boolean drawingArrow = false; // Flag to indicate if arrow is being drawn
-
-    private JTextField titleField;
-    private JTextArea descriptionArea;
+    private boolean drawingArrow = false;
+    private final JTextField titleField;
+    private final JTextArea descriptionArea;
+    private final JTextArea recipeTitleArea;
+    private final JTextArea recipeDescriptionArea;
 
     public GraphPanel() {
-        JButton addButton = new JButton("Add Square");
+        JButton addButton = new JButton("Add Step");
         addButton.addActionListener(e -> addNewSquare());
 
         JPanel inputPanel = new JPanel();
         inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
         inputPanel.add(addButton);
 
-        titleField = new JTextField("Title");
+        titleField = new JTextField("Enter Title");
         inputPanel.add(titleField);
 
-        descriptionArea = new JTextArea("Description");
+        descriptionArea = new JTextArea("Enter Description");
         descriptionArea.setLineWrap(true);
         descriptionArea.setRows(4);
         inputPanel.add(descriptionArea);
 
         setBackground(new Color(173, 216, 230));
-        add(inputPanel);
+        add(inputPanel, BorderLayout.NORTH);
+
+        JPanel outputPanel = new JPanel();
+        JButton submitButton = new JButton("Write to File");
+        submitButton.addActionListener(e -> convertToFile());
+        this.recipeTitleArea = new JTextArea("Recipe Title");
+        outputPanel.add(recipeTitleArea);
+        this.recipeDescriptionArea = new JTextArea("Recipe Description");
+        recipeDescriptionArea.setRows(4);
+        outputPanel.add(recipeDescriptionArea);
+        outputPanel.add(submitButton);
+        outputPanel.setLayout(new BoxLayout(outputPanel, BoxLayout.Y_AXIS));
+        add(outputPanel, BorderLayout.SOUTH);
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -56,7 +71,6 @@ public class GraphPanel extends JPanel {
                         break;
                     }
                 }
-                // Check if clicked in the gray corner of a square to start drawing arrow
                 if (isInsideGrayCorner(e.getPoint()) != null) {
                     drawingArrow = true;
                     arrowStart = e.getPoint();
@@ -68,7 +82,6 @@ public class GraphPanel extends JPanel {
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
                 stopDragging();
-                // If arrow was being drawn, find square mouse released over and set arrow end
                 if (drawingArrow) {
                     for (Square square : squares) {
                         if (isInsideGrayCorner(e.getPoint()) != null) {
@@ -102,9 +115,29 @@ public class GraphPanel extends JPanel {
         });
     }
 
+    private void convertToFile() {
+        if (squares.size() < 1) {
+            return;
+        }
+        HashMap<Square, ArrayList<Square>> graph = new HashMap<>();
+        for (Square square : squares) {
+            graph.put(square, square.getArrowsTo());
+        }
+        try {
+            Graph outputToFile = new Graph(graph, squares.get(0));
+            outputToFile.txtFile(recipeTitleArea.getText(), recipeDescriptionArea.getText());
+            if (!outputToFile.graphHasImage()) {
+                showMessageDialog(null, "No image found to associate with this recipe, outputting text file anyways. ");
+            }
+            showMessageDialog(null, "Recipe created");
+        } catch (IllegalArgumentException e) {
+            showMessageDialog(null, "Current graph contains a cycle!");
+        }
+    }
+
     private void addNewSquare() {
         int x = 50;
-        int y = 50;
+        int y = 300;
         String title = titleField.getText();
         String description = descriptionArea.getText();
         Square square = new Square(x, y, title, description);
@@ -149,121 +182,36 @@ public class GraphPanel extends JPanel {
         for (Square square : squares) {
             square.draw(g);
             for (Square sq : square.getArrowsTo()) {
-                drawArrow(g, square.position, sq.position);
+                drawArrow(g, square.getPosition(), sq.getPosition());
             }
         }
         if (drawingArrow) {
             drawArrow(g, arrowStart, arrowEnd);
         }
-
     }
 
     private void drawArrow(Graphics g, Point start, Point end) {
 
-        // stack exchange for arrow graphic
-        Graphics2D g2d = (Graphics2D) g.create();
-        g2d.setColor(Color.BLACK);
-        g2d.setStroke(new BasicStroke(2));
-        g2d.drawLine(start.x, start.y, end.x, end.y);
+        int midX = (start.x + end.x) / 2;
+        int midY = (start.y + end.y) / 2;
 
 
-        int arrowSize = 8;
         double angle = Math.atan2(end.y - start.y, end.x - start.x);
-        int x1 = (int) (end.x - arrowSize * Math.cos(angle - Math.PI / 6));
-        int y1 = (int) (end.y - arrowSize * Math.sin(angle - Math.PI / 6));
-        int x2 = (int) (end.x - arrowSize * Math.cos(angle + Math.PI / 6));
-        int y2 = (int) (end.y - arrowSize * Math.sin(angle + Math.PI / 6));
 
-        g2d.fillPolygon(new int[]{end.x, x1, x2}, new int[]{end.y, y1, y2}, 3);
-        g2d.dispose();
+
+        int arrowSize = 12;
+        int x1 = (int) (midX - arrowSize * Math.cos(angle - Math.PI / 6));
+        int y1 = (int) (midY - arrowSize * Math.sin(angle - Math.PI / 6));
+        int x2 = (int) (midX - arrowSize * Math.cos(angle + Math.PI / 6));
+        int y2 = (int) (midY - arrowSize * Math.sin(angle + Math.PI / 6));
+
+
+        g.setColor(Color.BLACK);
+        g.drawLine(start.x, start.y, end.x, end.y);
+
+
+        g.fillPolygon(new int[]{midX, x1, x2}, new int[]{midY, y1, y2}, 3);
     }
 
-    private class Square {
-        private Point position;
-        private String title;
-        private String description;
-        private ArrayList<Square> arrowsTo;
-        private ArrayList<Square> arrowsFrom;
-        private int width;
-        private int height;
 
-        public Square(int x, int y, String title, String description) {
-            this.position = new Point(x, y);
-            this.title = title;
-            this.description = description;
-            this.arrowsTo = new ArrayList<>();
-            this.arrowsFrom = new ArrayList<>();
-        }
-
-        public void addArrowTo(Square sq) {
-            this.arrowsTo.add(sq);
-        }
-
-
-        public ArrayList<Square> getArrowsTo() {
-            return this.arrowsTo;
-        }
-
-        public Point getPosition() {
-            return position;
-        }
-
-        public void setPosition(Point position) {
-            this.position = position;
-        }
-
-        public void calculateSize(Graphics g) {
-            FontMetrics titleMetrics = g.getFontMetrics();
-            width = 200;
-            int descriptionWidth = width - 10;
-            int numLines = (int) Math.ceil((double) description.length() * g.getFontMetrics().getHeight() / descriptionWidth);
-            height = (titleMetrics.getHeight() / 2 * numLines) + 50;
-        }
-
-        public boolean contains(Point point) {
-            return point.x >= position.x && point.x <= position.x + width &&
-                    point.y >= position.y && point.y <= position.y + height;
-        }
-
-        public void draw(Graphics g) {
-            g.setColor(new Color(203, 203, 203));
-            g.fillRect(position.x, position.y, width, height);
-
-            // Draw gray button in the upper left
-            g.setColor(Color.LIGHT_GRAY);
-            g.fillRect(position.x - 10, position.y - 10, 20, 20);
-
-            // Draw delete button in the upper right
-            g.setColor(Color.RED);
-            g.fillOval(position.x + width - 15, position.y, 15, 15);
-
-            // Draw title and description
-            g.setColor(Color.BLACK);
-            g.drawString(title, position.x + 5, position.y + g.getFontMetrics().getHeight());
-            drawWrappedText(g, description, position.x + 5, position.y + g.getFontMetrics().getHeight() * 2, width - 10);
-        }
-
-        private void drawWrappedText(Graphics g, String text, int x, int y, int maxWidth) {
-            int lineHeight = g.getFontMetrics().getHeight();
-            int start = 0;
-            for (int i = 0; i < text.length(); i++) {
-                if (g.getFontMetrics().stringWidth(text.substring(start, i)) > maxWidth) {
-                    g.drawString(text.substring(start, i), x, y);
-                    y += lineHeight;
-                    start = i;
-                }
-            }
-            if (start < text.length()) {
-                g.drawString(text.substring(start), x, y);
-            }
-        }
-
-        public int getWidth() {
-            return width;
-        }
-
-        public int getHeight() {
-            return height;
-        }
-    }
 }
